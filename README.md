@@ -1,4 +1,4 @@
-# Recruitment task solution
+# Kata 19 problem task solution
 
 ## Task:
 http://codekata.com/kata/kata19-word-chains/
