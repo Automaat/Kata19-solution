@@ -1,51 +1,55 @@
 package sabre.word_chains;
 
-import com.google.common.base.Preconditions;
 import org.apache.commons.text.similarity.LevenshteinDistance;
+import sabre.word_chains.errors.ErrorMessages;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
-import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
+import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 
 class WordDictionary {
 
-    private final Map<Integer, List<String>> words;
+    private static final int LEVENSHTEIN_SCORE = 1;
+    private final Map<Integer, Set<String>> words;
     private final LevenshteinDistance distance = new LevenshteinDistance();
 
     WordDictionary(String filePath) {
-        Preconditions.checkNotNull(filePath);
+        checkNotNull(filePath);
         this.words = readFile(filePath);
     }
 
-    List<String> getWordsThatDifferWithOneLetterFrom(String givenWord) {
-        return words.getOrDefault(givenWord.length(), emptyList())
+    Set<String> getWordsThatDifferWithOneLetterFrom(String givenWord) {
+        return words.getOrDefault(givenWord.length(), emptySet())
                 .stream()
-                .filter(word -> distance.apply(givenWord, word) == 1)
-                .collect(toList());
+                .filter(word -> distance.apply(givenWord, word) == LEVENSHTEIN_SCORE)
+                .collect(toSet());
     }
 
     boolean doesNotContain(String word) {
         return !words
-                .getOrDefault(word.length(), emptyList())
+                .getOrDefault(word.length(), emptySet())
                 .contains(word);
     }
 
-    private static Map<Integer, List<String>> readFile(String filePath) {
+    private void checkNotNull(String filePath) {
+        if (filePath == null) {
+            throw new IllegalArgumentException(ErrorMessages.FILE_DOES_NOT_EXISTS.getMessage());
+        }
+    }
+
+    private static Map<Integer, Set<String>> readFile(String filePath) {
         try (Stream<String> lines = Files.lines(Paths.get(filePath))) {
 
-            return lines.collect(groupingBy(String::length));
+            return lines.collect(groupingBy(String::length, toSet()));
 
-        } catch (IOException e) {
-            e.printStackTrace();
-            return emptyMap();
+        } catch (Exception e) {
+            throw new IllegalArgumentException(ErrorMessages.COULD_NOT_READ_FILE.getMessage());
         }
     }
 }

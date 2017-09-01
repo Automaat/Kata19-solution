@@ -1,9 +1,8 @@
 package sabre.word_chains
 
+import sabre.word_chains.errors.ErrorMessages
 import spock.lang.Specification
 import spock.lang.Unroll
-
-import static org.assertj.core.api.Assertions.assertThat
 
 class ChainFinderSpec extends Specification {
 
@@ -11,43 +10,35 @@ class ChainFinderSpec extends Specification {
 
     def chainFinder = new ChainFinder(wordDictionaryMock)
 
-    def "should validate if words exists"() {
-        given:
-        def start = "nonExisting"
-        def end = "nonExisting"
-
+    @Unroll
+    def 'should throw exception with message: #expectedMessage'() {
         when:
         chainFinder.find(start, end)
 
         then:
-        def exception = thrown(RuntimeException)
-        exception.getMessage() == "Unknown words"
-    }
+        def exception = thrown(IllegalArgumentException)
+        exception.getMessage() == expectedMessage
 
-    def "should validate if words have the same length"() {
-        given:
-        def start = "zoetic"
-        def end = "zoetropes"
+        where:
+        start           | end               | expectedMessage
+        "nonExisting"   | "nonExisting"     | ErrorMessages.UNKNOWN_WORDS.getMessage()
+        null            | "nonExisting"     | ErrorMessages.UNKNOWN_WORDS.getMessage()
+        "nonExisting"   | null              | ErrorMessages.UNKNOWN_WORDS.getMessage()
+        "zoetic"        | "zoetropes"       | ErrorMessages.DIFFERENT_SIZE_WORDS.getMessage()
 
-        when:
-        chainFinder.find(start, end)
-
-        then:
-        def exception = thrown(RuntimeException)
-        exception.getMessage() == "Words must have the same size"
     }
 
     @Unroll
-    def "should find chain for start: #start, end: #end"() {
+    def 'should find chain for start: #start, end: #end'() {
         expect:
         def find = chainFinder.find(start, end)
-        assertThat(find).hasSameElementsAs(expectedList)
+        find == expectedList
 
         where:
         start       |   end         |   expectedList
-        "cat"       |   "dog"       |   ["cat", "cot", "cog", "dog"]
-        "gold"      |   "lead"      |   ["lead", "load", "goad", "gold"]
-        "ruby"      |   "code"      |   ["ruby", "rube", "robe", "rode", "code"]
+        "cat"       |   "dog"       |   ["cat", "cot", "dot", "dog"]
+        "gold"      |   "lead"      |   ["gold", "goad", "load", "lead"]
+        "ruby"      |   "code"      |   ["ruby", "rube", "rude", "rode", "code"]
         "brushing"  |   "cheating"  |   ["brushing", "crushing", "crusting", "cresting", "creating", "cheating"]
         "yumpies"   |   "yobboes"   |   []
     }

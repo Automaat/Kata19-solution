@@ -1,6 +1,8 @@
 package sabre.word_chains;
 
+import com.google.common.collect.Lists;
 import lombok.RequiredArgsConstructor;
+import sabre.word_chains.errors.ErrorMessages;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -21,23 +23,34 @@ public class ChainFinder {
     private final WordDictionary wordDictionary;
 
     public List<String> find(String start, String end) {
-        checkIfWordsExists(start, end);
-        checkIfWordsHaveSameLength(start, end);
+        validateUserInput(start, end);
         return recreateChainFrom(
                 end,
                 rawSolution(start, end)
         );
     }
 
+    private void validateUserInput(String start, String end) {
+        checkNotNull(start, end);
+        checkIfWordsExists(start, end);
+        checkIfWordsHaveSameLength(start, end);
+    }
+
+    private void checkNotNull(String start, String end) {
+        if (start == null || end == null) {
+            throw new IllegalArgumentException(ErrorMessages.UNKNOWN_WORDS.getMessage());
+        }
+    }
+
     private void checkIfWordsExists(String start, String end) {
         if (wordDictionary.doesNotContain(start) || wordDictionary.doesNotContain(end)) {
-            throw new RuntimeException("Unknown words");
+            throw new IllegalArgumentException(ErrorMessages.UNKNOWN_WORDS.getMessage());
         }
     }
 
     private static void checkIfWordsHaveSameLength(String start, String end) {
         if (start.length() != end.length()) {
-            throw new RuntimeException("Words must have the same size");
+            throw new IllegalArgumentException(ErrorMessages.DIFFERENT_SIZE_WORDS.getMessage());
         }
     }
 
@@ -72,8 +85,7 @@ public class ChainFinder {
             return emptyList();
         }
 
-        List<String> chain = new LinkedList<>();
-        chain.add(end);
+        List<String> chain = Lists.newArrayList(end);
 
         String nextWord = rawSolution.get(end);
 
